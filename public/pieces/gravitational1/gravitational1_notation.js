@@ -1,5 +1,13 @@
 //#ef NOTES
 /*
+Animate Cursor using timelineMS
+Array of timeline for each ms which pixel
+turn each pixel into MS
+tIMING:
+clock time
+
+what is last horizontal pixel?
+Animate one scrolling line at continuous tempo
 each staff as own svgcontainer
 
 ANIMATE CURSOR
@@ -14,29 +22,20 @@ Implement Animation Engine
 
 //#ef GLOBAL VARIABLES
 
-
 //#ef General Variables
 let NUM_PLAYERS = 4;
 const TEMPO_COLORS = [clr_brightOrange, clr_brightGreen, clr_brightBlue, clr_lavander, clr_darkRed2];
 //#endef General Variables
 
-//#ef Timing
+//##ef Timing
 const FRAMERATE = 60;
 let FRAMECOUNT = 0;
-let LASTFRAMECOUNT = 0;
-const PX_PER_SEC = 50;
-const PX_PER_HALFSEC = PX_PER_SEC / 2;
+const PX_PER_SEC = 60;
+const PX_PER_MS = PX_PER_SEC/1000;
+const MS_PER_PX = 1000/PX_PER_SEC;
 const PX_PER_FRAME = PX_PER_SEC / FRAMERATE;
 const MS_PER_FRAME = 1000.0 / FRAMERATE;
-const LEAD_IN_TIME_SEC = 2;
-const LEAD_IN_TIME_MS = LEAD_IN_TIME_SEC * 1000;
-const LEAD_IN_FRAMES = LEAD_IN_TIME_SEC * FRAMERATE;
-let startTime_epochTime_MS = 0;
-let pauseState = 0;
-let timePaused = 0;
-let pieceClockAdjustment = 0;
-let displayClock;
-//#endef Timing
+//##endef Timing
 
 //#ef Animation Engine Variables
 let cumulativeChangeBtwnFrames_MS = 0;
@@ -63,7 +62,6 @@ const WORLD_W = Math.min(DEVICE_SCREEN_W, MAX_W) - (WORLD_MARGIN * 2);
 const WORLD_H = Math.min(DEVICE_SCREEN_H, MAX_H) - 45;
 const WORLD_CENTER = WORLD_W / 2;
 const GAP = 6;
-const WORLD_W_FRAMES = WORLD_W / PX_PER_FRAME;
 //#endef World Panel Variables
 
 //#ef Canvas Variables
@@ -72,20 +70,28 @@ const NOTATIONCANVAS_H = WORLD_H;
 const NOTATIONCANVAS_W = WORLD_W;
 //#endef Canvas Variables
 
-//#ef Staves Variables
+//#ef Staff Variables
 const NUMSTAVES = 4;
 const STAFFGAP = 4;
 const STAFF_H = (NOTATIONCANVAS_H - (STAFFGAP * (NUMSTAVES - 1))) / NUMSTAVES;
 const STAFF_W = NOTATIONCANVAS_W;
 let staves = [];
-//#endef Staves Variables
+//#endef Staff Variables
+
+//#ef Staff Timing
+const STAFF_W_MS = Math.round(STAFF_W * MS_PER_PX);
+let timelineMS = [];
+for (var i = 0; i < STAFF_W_MS; i++) {
+  let tpx = Math.round(i*PX_PER_MS);
+  timelineMS.push(tpx);
+}
+//#endef Staff Timing
 
 //#ef Scrolling Tempo Cursors
 let tempoCursors = [];
-const NOTATION_CURSOR_H = 50;
+const NOTATION_CURSOR_H = STAFF_H;
 const NOTATION_CURSOR_STROKE_W = 3;
 //#endef Scrolling Tempo Cursors
-
 
 //#endef GLOBAL VARIABLES
 
@@ -96,13 +102,9 @@ function init() {
   makeStaves();
   makeScrollingTempoCursors();
 
-  let ts_Date = new Date(TS.now());
-  let t_startTime_epoch = ts_Date.getTime();
-  startTime_epochTime_MS = t_startTime_epoch;
-  epochTimeOfLastFrame_MS = t_startTime_epoch;
-  console.log(startTime_epochTime_MS);
-  // console.log(startTime_epochTime_MS%500);
-
+  let ts_Date = new Date(TS.now()); //Date stamp object from TimeSync library
+  let tsNowEpochTime_MS = ts_Date.getTime();
+  console.log(tsNowEpochTime_MS%STAFF_W);
   requestAnimationFrame(animationEngine); //kick off animation
 
 } // function init() END
@@ -201,7 +203,9 @@ function makeScrollingTempoCursors() {
   } //for (let tempoCsrIx = 0; tempoCsrIx < NUM_TEMPOS; tempoCsrIx++) END
   tempoCursors[0].setAttributeNS(null, 'display', 'yes');
   //MOVE SVG: "SVG".setAttributeNS(null, 'transform', 'translate(x,y)')
-  tempoCursors[0].setAttributeNS(null, 'transform', 'translate( 50,0)');
+//  tempoCursors[0].setAttributeNS(null, 'transform', 'translate(' + CSR_LAST_X.toString() + ',0)');
+  tempoCursors[0].setAttributeNS(null, 'transform', 'translate( 0,0)');
+
 } // function makeScrollingTempoCursors() END
 //#endef Make Scrolling Tempo Cursors
 
