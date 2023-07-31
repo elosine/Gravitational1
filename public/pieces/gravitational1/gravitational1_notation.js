@@ -31,8 +31,8 @@ const TEMPO_COLORS = [clr_brightOrange, clr_brightGreen, clr_brightBlue, clr_lav
 const FRAMERATE = 60;
 let FRAMECOUNT = 0;
 const PX_PER_SEC = 60;
-const PX_PER_MS = PX_PER_SEC/1000;
-const MS_PER_PX = 1000/PX_PER_SEC;
+const PX_PER_MS = PX_PER_SEC / 1000;
+const MS_PER_PX = 1000 / PX_PER_SEC;
 const PX_PER_FRAME = PX_PER_SEC / FRAMERATE;
 const MS_PER_FRAME = 1000.0 / FRAMERATE;
 //##endef Timing
@@ -54,7 +54,6 @@ const TS = timesync.create({
 let worldPanel;
 const DEVICE_SCREEN_W = window.screen.width;
 const DEVICE_SCREEN_H = window.screen.height;
-// console.log(DEVICE_SCREEN_W);
 const MAX_W = 1280; //16:10 aspect ratio; 0.625
 const MAX_H = 720;
 const WORLD_MARGIN = 15;
@@ -82,13 +81,13 @@ let staves = [];
 const STAFF_W_MS = Math.round(STAFF_W * MS_PER_PX);
 let timelineMS = [];
 for (var i = 0; i < STAFF_W_MS; i++) {
-  let tpx = Math.round(i*PX_PER_MS);
+  let tpx = Math.round(i * PX_PER_MS);
   timelineMS.push(tpx);
 }
 //#endef Staff Timing
 
 //#ef Scrolling Tempo Cursors
-let tempoCursors = [];
+let scrollingCursors = [];
 const NOTATION_CURSOR_H = STAFF_H;
 const NOTATION_CURSOR_STROKE_W = 3;
 //#endef Scrolling Tempo Cursors
@@ -100,11 +99,11 @@ function init() {
 
   makeWorldPanel();
   makeStaves();
-  makeScrollingTempoCursors();
+  makeScrollingCursors();
 
   let ts_Date = new Date(TS.now()); //Date stamp object from TimeSync library
   let tsNowEpochTime_MS = ts_Date.getTime();
-  console.log(tsNowEpochTime_MS%STAFF_W);
+  epochTimeOfLastFrame_MS = tsNowEpochTime_MS;
   requestAnimationFrame(animationEngine); //kick off animation
 
 } // function init() END
@@ -140,7 +139,7 @@ function makeStaves() {
     let tStaffObj = {}; //{div:,svg:,rect:}
     let ty = i * (STAFF_H + STAFFGAP);
 
-  let tDiv = mkDiv({
+    let tDiv = mkDiv({
       canvas: worldPanel.content,
       w: STAFF_W,
       h: STAFF_H,
@@ -151,7 +150,7 @@ function makeStaves() {
 
     tStaffObj['div'] = tDiv;
 
-  let tSvg = mkSVGcontainer({
+    let tSvg = mkSVGcontainer({
       canvas: tDiv,
       w: STAFF_W,
       h: STAFF_H,
@@ -182,31 +181,27 @@ function makeStaves() {
 //#endef Make Staves
 
 //#ef Make Scrolling Tempo Cursors
-function makeScrollingTempoCursors() {
+function makeScrollingCursors() {
 
-  for (let tempoCsrIx = 0; tempoCsrIx < NUM_PLAYERS; tempoCsrIx++) {
+  for (let scrollingCsrIx = 0; scrollingCsrIx < NUM_PLAYERS; scrollingCsrIx++) {
 
     let tLine = mkSvgLine({
-      svgContainer: staves[tempoCsrIx].svg,
+      svgContainer: staves[scrollingCsrIx].svg,
       x1: 0,
       y1: STAFF_H,
       x2: 0,
       y2: 0,
-      stroke: TEMPO_COLORS[tempoCsrIx],
+      stroke: TEMPO_COLORS[scrollingCsrIx],
       strokeW: NOTATION_CURSOR_STROKE_W
     });
     tLine.setAttributeNS(null, 'stroke-linecap', 'round');
     tLine.setAttributeNS(null, 'display', 'none');
     // tLine.setAttributeNS(null, 'transform', "translate(" + beatCoords[4].x.toString() + "," + beatCoords[4].y.toString() + ")");
-    tempoCursors.push(tLine);
+    scrollingCursors.push(tLine);
 
-  } //for (let tempoCsrIx = 0; tempoCsrIx < NUM_TEMPOS; tempoCsrIx++) END
-  tempoCursors[0].setAttributeNS(null, 'display', 'yes');
-  //MOVE SVG: "SVG".setAttributeNS(null, 'transform', 'translate(x,y)')
-//  tempoCursors[0].setAttributeNS(null, 'transform', 'translate(' + CSR_LAST_X.toString() + ',0)');
-  tempoCursors[0].setAttributeNS(null, 'transform', 'translate( 0,0)');
+  } //for (let scrollingCsrIx = 0; scrollingCsrIx < NUM_TEMPOS; scrollingCsrIx++) END
 
-} // function makeScrollingTempoCursors() END
+} // function makeScrollingCursors() END
 //#endef Make Scrolling Tempo Cursors
 
 
@@ -214,7 +209,30 @@ function makeScrollingTempoCursors() {
 
 //#ef WIPE/UPDATE/DRAW
 
+//###ef wipeScrollingCsrs
+function wipeScrollingCsrs() {
+  scrollingCursors.forEach((scrollingCsrSvgLine) => {
+    scrollingCsrSvgLine.setAttributeNS(null, 'display', 'none');
+  });
+}
+//###endef END wipeScrollingCsrs
 
+//###ef updateScrollingCsrs
+function updateScrollingCsrs(epochClock_MS) {
+
+  let timelineMsIx = epochClock_MS % timelineMS.length;
+  let currScrollingCsrX = timelineMS[timelineMsIx];
+
+  for (let scrollingCsrIx = 0; scrollingCsrIx < scrollingCursors.length; scrollingCsrIx++) {
+
+    scrollingCursors[scrollingCsrIx].setAttributeNS(null, 'x1', currScrollingCsrX);
+    scrollingCursors[scrollingCsrIx].setAttributeNS(null, 'x2', currScrollingCsrX);
+    scrollingCursors[scrollingCsrIx].setAttributeNS(null, 'display', 'yes');
+
+  } // end for (let scrollingCsrIx = 0; scrollingCsrIx < scrollingCursors.length; scrollingCsrIx++)
+
+} // function updateScrollingCsrs() END
+//###endef updateScrollingCsrs
 
 //#endef WIPE/UPDATE/DRAW
 
@@ -231,13 +249,9 @@ function animationEngine(timestamp) { //timestamp not used; timeSync server libr
   while (cumulativeChangeBtwnFrames_MS >= MS_PER_FRAME) { //if too little change of clock time will wait until 1 animation frame's worth of MS before updating etc.; if too much change will update several times until caught up with clock time
 
     if (cumulativeChangeBtwnFrames_MS > (MS_PER_FRAME * FRAMERATE)) cumulativeChangeBtwnFrames_MS = MS_PER_FRAME; //escape hatch if more than 1 second of frames has passed then just skip to next update according to clock
-
     wipe(tsNowEpochTime_MS);
     update(tsNowEpochTime_MS);
     draw(tsNowEpochTime_MS);
-
-    LASTFRAMECOUNT = FRAMECOUNT;
-    FRAMECOUNT++
 
     cumulativeChangeBtwnFrames_MS -= MS_PER_FRAME; //subtract from cumulativeChangeBtwnFrames_MS 1 frame worth of MS until while cond is satisified
 
@@ -253,11 +267,15 @@ function animationEngine(timestamp) { //timestamp not used; timeSync server libr
 //#ef Wipe Function
 function wipe(epochClock_MS) {
 
+  wipeScrollingCsrs();
+
 } // function wipe() END
 //#endef Wipe Function
 
 //#ef Update Function
 function update(epochClock_MS) {
+
+  updateScrollingCsrs(epochClock_MS)
 
 }
 //#endef Update Function
