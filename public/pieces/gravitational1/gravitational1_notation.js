@@ -1,5 +1,8 @@
 //#ef NOTES
 /*
+Generate a databse of pages for each staff and curve locations
+length of curve grows at different rate for each staff then shrinks
+gap between curves for each staff different pace
 Animate Cursor using timelineMS
 Array of timeline for each ms which pixel
 turn each pixel into MS
@@ -100,6 +103,7 @@ function init() {
   makeWorldPanel();
   makeStaves();
   makeScrollingCursors();
+  makeCurves();
 
   let ts_Date = new Date(TS.now()); //Date stamp object from TimeSync library
   let tsNowEpochTime_MS = ts_Date.getTime();
@@ -203,6 +207,30 @@ function makeScrollingCursors() {
 
 } // function makeScrollingCursors() END
 //#endef Make Scrolling Tempo Cursors
+
+//#ef Make Curves
+function makeCurves() {
+  var crvCoords = plot(function(x) {
+    return Math.pow(x, 2.4);
+  }, [0, 1, 1, 0], 50, STAFF_H);
+
+  var tSvgCrv = document.createElementNS(SVG_NS, "path");
+  var tpathstr = "";
+  for (var i = 0; i < crvCoords.length; i++) {
+    if (i == 0) {
+      tpathstr = tpathstr + "M" + crvCoords[i].x.toString() + " " + crvCoords[i].y.toString() + " ";
+    } else {
+      tpathstr = tpathstr + "L" + crvCoords[i].x.toString() + " " + crvCoords[i].y.toString() + " ";
+    }
+  }
+  tSvgCrv.setAttributeNS(null, "d", tpathstr);
+  tSvgCrv.setAttributeNS(null, "stroke", "rgba(255, 21, 160, 0.5)");
+  tSvgCrv.setAttributeNS(null, "stroke-width", "4");
+  tSvgCrv.setAttributeNS(null, "fill", "none");
+  tSvgCrv.setAttributeNS(null, "transform", "translate( 0, 0)");
+  staves[0].svg.appendChild(tSvgCrv);
+}
+//#endef Make Curves
 
 
 //#endef BUILD WORLD
