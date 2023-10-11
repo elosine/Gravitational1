@@ -1,5 +1,12 @@
 //#ef NOTES
 /*
+Make several pages of curves and have  a random trigger at the end of a Staff
+Slow cursor
+Get back to framerate timer
+
+2 Pages for every Staff
+trigger non active staff at last pixel/ms for the staff use modulo
+Fix staff width at 1260
 Generate a databse of pages for each staff and curve locations
 length of curve grows at different rate for each staff then shrinks
 gap between curves for each staff different pace
@@ -33,7 +40,7 @@ const TEMPO_COLORS = [clr_brightOrange, clr_brightGreen, clr_brightBlue, clr_lav
 //##ef Timing
 const FRAMERATE = 60;
 let FRAMECOUNT = 0;
-const PX_PER_SEC = 60;
+const PX_PER_SEC = 40;
 const PX_PER_MS = PX_PER_SEC / 1000;
 const MS_PER_PX = 1000 / PX_PER_SEC;
 const PX_PER_FRAME = PX_PER_SEC / FRAMERATE;
@@ -59,7 +66,7 @@ const DEVICE_SCREEN_W = window.screen.width;
 const DEVICE_SCREEN_H = window.screen.height;
 const MAX_W = 1280; //16:10 aspect ratio; 0.625
 const MAX_H = 720;
-const WORLD_MARGIN = 15;
+const WORLD_MARGIN = 10;
 const WORLD_W = Math.min(DEVICE_SCREEN_W, MAX_W) - (WORLD_MARGIN * 2);
 const WORLD_H = Math.min(DEVICE_SCREEN_H, MAX_H) - 45;
 const WORLD_CENTER = WORLD_W / 2;
@@ -77,6 +84,7 @@ const NUMSTAVES = 4;
 const STAFFGAP = 4;
 const STAFF_H = (NOTATIONCANVAS_H - (STAFFGAP * (NUMSTAVES - 1))) / NUMSTAVES;
 const STAFF_W = NOTATIONCANVAS_W;
+console.log(STAFF_W);
 let staves = [];
 //#endef Staff Variables
 
@@ -211,8 +219,8 @@ function makeScrollingCursors() {
 //#ef Make Curves
 function makeCurves() {
   var crvCoords = plot(function(x) {
-    return Math.pow(x, 2.4);
-  }, [0, 1, 1, 0], 50, STAFF_H);
+    return Math.pow(x, 1.5);
+  }, [0, 1, 1, 0], 15, STAFF_H);
 
   var tSvgCrv = document.createElementNS(SVG_NS, "path");
   var tpathstr = "";
@@ -227,7 +235,7 @@ function makeCurves() {
   tSvgCrv.setAttributeNS(null, "stroke", "rgba(255, 21, 160, 0.5)");
   tSvgCrv.setAttributeNS(null, "stroke-width", "4");
   tSvgCrv.setAttributeNS(null, "fill", "none");
-  tSvgCrv.setAttributeNS(null, "transform", "translate( 0, 0)");
+  tSvgCrv.setAttributeNS(null, "transform", "translate( 100, 20)");
   staves[0].svg.appendChild(tSvgCrv);
 }
 //#endef Make Curves
@@ -295,7 +303,7 @@ function animationEngine(timestamp) { //timestamp not used; timeSync server libr
 //#ef Wipe Function
 function wipe(epochClock_MS) {
 
-  wipeScrollingCsrs();
+  // wipeScrollingCsrs();
 
 } // function wipe() END
 //#endef Wipe Function
@@ -303,7 +311,7 @@ function wipe(epochClock_MS) {
 //#ef Update Function
 function update(epochClock_MS) {
 
-  updateScrollingCsrs(epochClock_MS)
+  updateScrollingCsrs(epochClock_MS);
 
 }
 //#endef Update Function
